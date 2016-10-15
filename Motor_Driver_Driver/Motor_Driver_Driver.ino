@@ -4,6 +4,9 @@
 #ifndef sbi
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif 
+#ifndef wbi
+#define wbi(sfr, bit, val) if (val) { sbi(sfr, bit); } else { cbi(sfr, bit); }
+#endif
 
 #define TLC_LAT 3
 #define TLC_CLK 4
@@ -51,6 +54,11 @@ void write_duty_cycles(void) {
 }
 
 void setup() {
+  // set C0:2, D3, D5:7 and B0 as outputs for DIR
+  DDRC |= 0x7;
+  DDRD |= (1<<3);
+  DDRB |= (1<<0);
+  
   // set C3:6 as output
   DDRC |= 0x38;
 
@@ -107,15 +115,94 @@ void setup() {
   // toggle OC2A at 4Mhz, giving f=2MHz
   OCR2A = 3;
 
-  duty_cycles[0] = 50;
-  duty_cycles[1] = 25;
-  duty_cycles[2] = 75;
-  duty_cycles[3] = 0;
-  duty_cycles[4] = 100;
+  Serial.begin(115200);
+  Serial.setTimeout(10);
 }
 
 void loop() {
   static uint32_t last_change = 0;
+  static uint8_t motor = 0xFF,
+    dir = 0xFF,
+    power = 0xFF;
+
+  int tmp;
+
+  if (Serial.available()) {
+  
+    if (Serial.peek() == 'M' && Serial.available() >= 2) {      
+      tmp = Serial.parseInt();
+
+      if (tmp >= 1 && tmp <= 8) {
+        motor = tmp;
+      }
+    }
+    else if (Serial.peek() == 'D' && Serial.available() >= 2) {
+      tmp = Serial.parseInt();
+
+      if (tmp == 0 || tmp == 1) {
+        dir = tmp;
+      }
+    }
+    else if (Serial.peek() == 'P' && Serial.available() >= 4) {
+      tmp = Serial.parseInt();
+
+      if (tmp >= 0 && tmp <= 100) {
+        power = tmp;
+      }
+    }
+    else if (Serial.peek() == '\n' || Serial.peek() == '\r') {
+      // remove the \n or \r from serial buffer
+      Serial.read();
+
+      // remove the second \n or \r if present
+      if (Serial.peek() == '\n' || Serial.peek() == '\r') Serial.read();
+      
+      if (motor >= 1 && motor <= 8) {
+        // if dir was defined for this line then set it
+        if (dir == 0 || dir == 1) {
+          switch(motor) {
+            case 1:
+            case 2:
+            case 3:
+              wbi(PORTC, motor, dir);
+              break;
+            case 4:
+              wbi(PORTD, 3, dir);
+              break;
+            case 5:
+              wbi(PORTB, 0, dir);
+              break;
+            case 6:
+            case 7:
+            case 8:
+              wbi(PORTD, motor - 1, dir);
+              break;
+          }
+        }
+
+        // if power was defined then set it
+        if (power < 255) {
+          duty_cycles[motor-1] = power;
+          write_duty_cycles();
+        }
+
+        motor = dir = power = 255;
+        Serial.println('S');
+      }
+      else {
+        Serial.print('M');
+        Serial.print(motor);
+        Serial.print('D');
+        Serial.print(dir);
+        Serial.print('P');
+        Serial.print(power);
+        Serial.println('E');
+      }
+    }
+    else {
+      Serial.flush();
+    }
+  }
 
   write_duty_cycles();
   
