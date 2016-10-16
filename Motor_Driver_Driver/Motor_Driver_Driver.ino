@@ -116,7 +116,7 @@ void setup() {
   OCR2A = 3;
 
   Serial.begin(115200);
-  Serial.setTimeout(10);
+  Serial.setTimeout(5000);
 }
 
 void loop() {
@@ -129,25 +129,33 @@ void loop() {
 
   if (Serial.available()) {
   
-    if (Serial.peek() == 'M' && Serial.available() >= 2) {      
-      tmp = Serial.parseInt();
-
-      if (tmp >= 1 && tmp <= 8) {
-        motor = tmp;
+    if (Serial.peek() == 'M') {
+      if (Serial.available() >= 2) {      
+        tmp = Serial.parseInt();
+  
+        if (tmp >= 1 && tmp <= 8) {
+          motor = tmp;
+        }
       }
     }
-    else if (Serial.peek() == 'D' && Serial.available() >= 2) {
-      tmp = Serial.parseInt();
-
-      if (tmp == 0 || tmp == 1) {
-        dir = tmp;
+    else if (Serial.peek() == 'D') {
+      if (Serial.available() >= 2) {    
+        tmp = Serial.parseInt();
+  
+        if (tmp == 0 || tmp == 1) {
+          dir = tmp;
+        }
       }
     }
-    else if (Serial.peek() == 'P' && Serial.available() >= 4) {
-      tmp = Serial.parseInt();
-
-      if (tmp >= 0 && tmp <= 100) {
-        power = tmp;
+    else if (Serial.peek() == 'P') {
+      if (Serial.available() >= 2) {
+        tmp = Serial.parseInt();
+  
+        if (tmp >= 0 && tmp <= 100) {
+          Serial.print("Found power: ");
+          Serial.println(tmp);
+          power = tmp;
+        }
       }
     }
     else if (Serial.peek() == '\n' || Serial.peek() == '\r') {
@@ -186,6 +194,12 @@ void loop() {
           write_duty_cycles();
         }
 
+        Serial.print('M');
+        Serial.print(motor);
+        Serial.print('D');
+        Serial.print(dir);
+        Serial.print('P');
+        Serial.print(power);
         motor = dir = power = 255;
         Serial.println('S');
       }
@@ -200,7 +214,8 @@ void loop() {
       }
     }
     else {
-      Serial.flush();
+      // byte is invalid, was not caught by any of the cases above so dump it
+      Serial.read();
     }
   }
 
