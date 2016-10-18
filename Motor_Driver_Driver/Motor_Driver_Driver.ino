@@ -78,13 +78,12 @@ void setup() {
   TCCR1A = 0b10000010;
 
   // [4:3] Fast PWM with TOP = ICR1
-  // [2:0] prescalar = 8
-  TCCR1B = 0b00011010;
+  // [2:0] prescalar = 1
+  TCCR1B = 0b00011001;
 
-  // reset timer when TCNT1 = ICR1 = 99
+  // reset timer when TCNT1 = ICR1
   // OC1A is also reset to 0/1 in non inverting/inverting mode respectively
-  // results in 16M/(8*100)Hz = 20KHz
-  ICR1 = 99;
+  ICR1 = 800;
 
   // Configure timer1 to also fire interrupts when it overflows ie at 20KHz
   // Used to provide a millis variable at 50us resolution
