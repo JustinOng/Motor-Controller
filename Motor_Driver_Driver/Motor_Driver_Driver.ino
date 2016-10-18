@@ -172,7 +172,7 @@ void loop() {
             case 1:
             case 2:
             case 3:
-              wbi(PORTC, motor, dir);
+              wbi(PORTC, motor-1, dir);
               break;
             case 4:
               wbi(PORTD, 3, dir);
