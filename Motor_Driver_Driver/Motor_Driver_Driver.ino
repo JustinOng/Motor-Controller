@@ -115,6 +115,12 @@ void setup() {
   // toggle OC2A at 4Mhz, giving f=2MHz
   OCR2A = 3;
 
+  for(uint8_t i = 0; i < 8;i ++) {
+    duty_cycles[i] = 100;
+  }
+  
+  write_duty_cycles();
+  
   Serial.begin(115200);
   Serial.setTimeout(5000);
 }
