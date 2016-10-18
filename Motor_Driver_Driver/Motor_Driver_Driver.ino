@@ -152,9 +152,8 @@ void loop() {
         tmp = Serial.parseInt();
   
         if (tmp >= 0 && tmp <= 100) {
-          Serial.print("Found power: ");
-          Serial.println(tmp);
-          power = tmp;
+          // invert input PWM
+          power = 100-tmp;
         }
       }
     }
