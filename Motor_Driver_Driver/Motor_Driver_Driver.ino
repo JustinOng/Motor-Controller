@@ -56,11 +56,24 @@ void write_duty_cycles(void) {
 void setup() {
   // set C0:2, D3, D5:7 and B0 as outputs for DIR
   DDRC |= 0x7;
-  DDRD |= (1<<3);
+  DDRD |= (1<<3) | (1<<5) | (1<<6) | (1<<7);
   DDRB |= (1<<0);
   
   // set C3:6 as output
   DDRC |= 0x38;
+  
+  //OC2A as output
+  DDRB |= (1<<3);
+  cbi(PORTB, 3);
+  cbi(PORTB, 1);
+  
+  for(uint8_t i = 0; i < 8;i ++) {
+    duty_cycles[i] = 100;
+  }
+  
+  write_duty_cycles();
+  
+  sbi(PORTB, 3);
 
   // set PB5 as output for STATUS
   DDRB |= (1<<5);
@@ -99,9 +112,6 @@ void setup() {
   OCR1A = 0;
 
   // Configure timer2 as the 2MHz clock to drive GSCLK of the TLC5940 on pin OC2A
-
-  //OC2A as output
-  DDRB |= (1<<3);
   
   // [8:7] toggle OC2A on match with OCR2A
   // [1:0] WGM Mode 7, Fast PWM with TOP = OCR2A
@@ -113,12 +123,6 @@ void setup() {
 
   // toggle OC2A at 4Mhz, giving f=2MHz
   OCR2A = 3;
-
-  for(uint8_t i = 0; i < 8;i ++) {
-    duty_cycles[i] = 100;
-  }
-  
-  write_duty_cycles();
   
   Serial.begin(115200);
   Serial.setTimeout(5000);
